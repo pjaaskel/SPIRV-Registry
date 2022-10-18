@@ -1,0 +1,153 @@
+= SPV_INTEL_subgroups_linear_mapping
+
+== Name Strings
+
+SPV_INTEL_subgroups_linear_mapping
+
+== Contact
+
+To report problems with this extension, please open a new issue at:
+
+https://github.com/KhronosGroup/SPIRV-Registry
+
+== Contributors
+
+- Pekka Jääskeläinen, Intel +
+- Ben Ashbaugh, Intel +
+
+== Notice
+
+Copyright (c) 2022 Intel Corporation.  All rights reserved.
+
+== Status
+
+- Early Draft
+
+== Version
+
+[width="40%",cols="25,25"]
+|========================================
+| Last Modified Date | 2022-10-18
+| Revision           | 1
+|========================================
+
+== Dependencies
+
+This extension is written against the SPIR-V Specification,
+Version 1.2 Revision 1.
+
+This extension requires SPIR-V 1.0 and the SPV_INTEL_subgroups
+extension, which it builds upon.
+
+== Overview
+
+This extension adds the capability to enforce a well-defined linear
+mapping of local work-item ids to flat subgroup lane ids which can
+be referred to by subgroup instructions such as shuffles.
+
+The mapping can be enabled on per kernel basis and is often combined
+with cl_intel_required_subgroup_size to provide a very well-defined
+subgroup environment, which is useful in some programming patterns.
+
+== Extension Name
+
+To use this extension within a SPIR-V module, the appropriate *OpExtension* must be present in the module:
+
+----
+OpExtension "SPV_INTEL_subgroups_linear_mapping"
+----
+
+== New Capabilities
+
+This extension introduces a new capability:
+
+----
+SubgroupLinearMappingINTEL
+----
+
+== New Builtin
+
+A new builtin is added under the *SubgroupLinearMappingINTEL* capability:
+
+----
+SetSubgroupLinearMapping
+----
+
+When this builtin is present in a kernel, it enforces a linear mapping of
+work-item thread ids to subgroup lane IDs.
+
+The *local_thread_id* follows the following formula:
+
+  local_thread_id =
+    get_local_id(2) * get_local_size(2) * get_local_size(1) * get_local_size(0) +
+    get_local_id(1) * get_local_size(0) +
+    get_local_id(0)
+
+  lane_id = local_thread_id % subgroup_size
+
+Where *get_local_id(2)* and *get_local_id(1)* are assumed to be 0 for work-groups
+with less than 3 and 2 dimensions, respectively. *subgroup_size* denotes the
+number of lanes in the subgroup.
+
+The *local_thread_id* maps directly to the lanes of a subgroup in a linear order.
+
+When the subgroup size is larger than the total work-group size, the lanes
+exceeding the highest *local_thread_id* store undefined values.
+
+When the subgroup size is smaller than the local work-group size, there
+must be multiple subgroups that cover all of the work-items. In that case
+the lane id is computed as follows.
+
+If the subgroups do not cover all the work-items fully (in case of partial
+work-groups), the lanes exceeding the highest covered *local_thread_id* in
+that subgroup store undefined values.
+
+== Token Number Assignments
+
+[width="40%"]
+[cols="70%,30%"]
+[grid="rows"]
+|====
+|SubgroupLinearMappingINTEL           |   TBD
+|====
+
+== Modifications to the SPIR-V Specification, Version 1.2
+
+=== Capabilities
+
+Modify Section 3.31, Capability, adding rows to the Capability table:
+
+[cols="1,10,4,4",options="header"]
+|====
+2+^| Capability ^| Implicitly Declares ^| Enabled by Extension
+
+| ????
+| *SubgroupLinearMappingINTEL*
+|
+| *SPV_INTEL_subgroups_linear_mapping*
+
+|====
+
+== Validation Rules
+
+None.
+
+== Issues
+
+None.
+
+//. Issue.
+//+
+//--
+//*RESOLVED*: Resolution.
+//--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|1|2022-10-18|Pekka Jääskeläinen|*Initial revision*
+|========================================
