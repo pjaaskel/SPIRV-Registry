@@ -761,7 +761,7 @@ Pekka Jääskeläinen, Intel<br />
 </li>
 <li>
 <p>
-Ben Ashbaugh, Intel<br />
+Henry Linjamäki, Intel<br />
 </p>
 </li>
 </ul></div>
@@ -802,7 +802,7 @@ cellspacing="0" cellpadding="4">
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">Revision</p></td>
-<td align="left" valign="top"><p class="table">1</p></td>
+<td align="left" valign="top"><p class="table">2</p></td>
 </tr>
 </tbody>
 </table>
@@ -858,30 +858,37 @@ subgroup environment, which is useful in some programming patterns.</p></div>
 <pre><code>SetSubgroupLinearMapping</code></pre>
 </div></div>
 <div class="paragraph"><p>When this builtin is present in a kernel, it enforces a linear mapping of
-work-item thread ids to subgroup lane IDs.</p></div>
-<div class="paragraph"><p>The <strong>local_thread_id</strong> follows the following formula:</p></div>
+local work-item ids to subgroup lane IDs.</p></div>
+<div class="paragraph"><p>The <strong>local_linear_id</strong> matches the get_local_linear_id() as defined in OpenCL C 2.0
+specification. It is computed using the following formula:</p></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>local_thread_id =
+<pre><code>local_linear_id =
   get_local_id(2) * get_local_size(2) * get_local_size(1) * get_local_size(0) +
   get_local_id(1) * get_local_size(0) +
   get_local_id(0)</code></pre>
 </div></div>
+<div class="paragraph"><p>Where <strong>get_local_id(2)</strong> and <strong>get_local_id(1)</strong> are assumed to be 0 for work-groups
+with less than 3 and 2 dimensions, respectively.</p></div>
+<div class="paragraph"><p>The <strong>local_linear_id</strong> maps directly to the lanes of a subgroup in a linear order
+as follows:</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>lane_id = local_thread_id % subgroup_size</code></pre>
 </div></div>
-<div class="paragraph"><p>Where <strong>get_local_id(2)</strong> and <strong>get_local_id(1)</strong> are assumed to be 0 for work-groups
-with less than 3 and 2 dimensions, respectively. <strong>subgroup_size</strong> denotes the
-number of lanes in the subgroup.</p></div>
-<div class="paragraph"><p>The <strong>local_thread_id</strong> maps directly to the lanes of a subgroup in a linear order.</p></div>
+<div class="paragraph"><p><strong>Subgroup_size</strong> denotes the number of lanes in the subgroup.</p></div>
 <div class="paragraph"><p>When the subgroup size is larger than the total work-group size, the lanes
-exceeding the highest <strong>local_thread_id</strong> store undefined values.</p></div>
+exceeding the highest <strong>local_linear_id</strong> store undefined values.</p></div>
 <div class="paragraph"><p>When the subgroup size is smaller than the local work-group size, there
 must be multiple subgroups that cover all of the work-items. In that case
-the lane id is computed as follows.</p></div>
+the work-items map to different subgroups according to their linear
+ordering. That is, the subgroup index is computed as follows:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>subgroup_id = local_linear_id / subgroup_size</code></pre>
+</div></div>
 <div class="paragraph"><p>If the subgroups do not cover all the work-items fully (in case of partial
-work-groups), the lanes exceeding the highest covered <strong>local_thread_id</strong> in
+work-groups), the lanes exceeding the highest covered <strong>local_linear_id</strong> in
 that subgroup store undefined values.</p></div>
 </div>
 </div>
@@ -974,6 +981,12 @@ cellspacing="0" cellpadding="4">
 </thead>
 <tbody>
 <tr>
+<td align="left" valign="top"><p class="table">2</p></td>
+<td align="left" valign="top"><p class="table">2022-10-18</p></td>
+<td align="left" valign="top"><p class="table">Pekka Jääskeläinen, Henry Linjamäki</p></td>
+<td align="left" valign="top"><p class="table"><strong>Referred to the OpenCL C 2.0 get_local_linear_id() and defined subgroup_id ordering when there are multiple subgroups in flight.</strong></p></td>
+</tr>
+<tr>
 <td align="left" valign="top"><p class="table">1</p></td>
 <td align="left" valign="top"><p class="table">2022-10-18</p></td>
 <td align="left" valign="top"><p class="table">Pekka Jääskeläinen</p></td>
@@ -989,7 +1002,7 @@ cellspacing="0" cellpadding="4">
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2022-10-18 15:54:51 EEST
+ 2022-10-18 18:10:23 EEST
 </div>
 </div>
 </body>
