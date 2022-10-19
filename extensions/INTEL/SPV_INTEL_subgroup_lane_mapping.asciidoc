@@ -1,0 +1,192 @@
+= SPV_INTEL_subgroup_lane_mapping
+
+== Name Strings
+
+SPV_INTEL_subgroup_lane_mapping
+
+== Contact
+
+To report problems with this extension, please open a new issue at:
+
+https://github.com/KhronosGroup/SPIRV-Registry
+
+== Contributors
+
+- Pekka Jääskeläinen, Intel +
+- Henry Linjamäki, Intel +
+- John Pennycook, Intel +
+- Ben Ashbaugh, Intel +
+
+== Notice
+
+Copyright (c) 2022 Intel Corporation.  All rights reserved.
+
+== Status
+
+- Early Draft
+
+== Version
+
+[width="40%",cols="25,25"]
+|========================================
+| Last Modified Date | 2022-10-19
+| Revision           | 3
+|========================================
+
+== Dependencies
+
+This extension is written against the SPIR-V Specification,
+Version 1.2 Revision 1.
+
+== Overview
+
+This extension adds the capability to enforce a well-defined
+mapping for local work-item ids to subgroup lane ids.
+
+The mapping can be set on per kernel basis and can be combined
+with an explicit subgroup size to provide a very well-defined
+subgroup programming environment, which is useful in some parallel
+programming constructs such as shuffles.
+
+== Extension Name
+
+To use this extension within a SPIR-V module, the appropriate *OpExtension* must be present in the module:
+
+----
+OpExtension "SPV_INTEL_subgroup_lane_mapping"
+----
+
+== New Capabilities
+
+This extension introduces a new capability:
+
+----
+ExplicitSubgroupLaneMappingINTEL
+----
+
+== New Execution Mode
+
+A new execution modifier is added under the *ExplicitSubgroupLaneMappingINTEL*
+capability:
+
+----
+SubgroupLaneMappingINTEL
+----
+
+
+== Token Number Assignments
+
+[width="40%"]
+[cols="70%,30%"]
+[grid="rows"]
+|====
+|SubgroupLaneMappingINTEL           |   ????
+|====
+
+== Modifications to the SPIR-V Specification, Version 1.2
+
+=== Execution Mode
+
+Modify Section 3.6, Execution Mode, adding rows to the Execution Mode table:
+
+--
+[options="header"]
+|====
+2+^| Execution Mode | Extra Operands ^| Enabling Capabilities
+
+| ????
+d| *SubgroupLaneMappingINTEL* +
+
+Enforce an explicit mapping of local work-item ids to subgroup lane IDs.
+Only valid with the *Kernel* Execution Model.
+
+Currently the only valid mapping type is *0*, represeting a linear mapping of local work-item ids to the subgroup lanes, with the following mapping logic.
+
+The *local_linear_id* matches the get_local_linear_id() as defined in OpenCL C 2.0
+specification. It is computed using the following formula:
+
+  _local_linear_id =
+    get_local_id(2) * get_local_size(1) * get_local_size(0) +
+    get_local_id(1) * get_local_size(0) +
+    get_local_id(0)_
+
+Where *get_local_id(2)* and *get_local_id(1)* are assumed to return 0 and *get_local_size(2)*
+and *get_local_size(1)* to return 1 for work-groups with less than 3 and 2 dimensions,
+respectively.
+
+The *local_linear_id* maps directly to the lanes of a subgroup in a linear order
+as follows:
+
+  _lane_id = local_thread_id % subgroup_size_
+
+*Subgroup_size* denotes the number of lanes in the subgroup.
+
+When the subgroup size is smaller than the local work-group size, there
+must be multiple subgroups that cover all of the work-items. In that case
+the work-items map to different subgroups according to their linear
+ordering. That is, the subgroup index is computed as follows:
+
+  _subgroup_id = local_linear_id / subgroup_size_
+
+If the subgroups do not cover all the work-items fully (in case of partial
+work-groups), the lanes exceeding the highest covered *local_linear_id* in
+that subgroup store undefined values.
+
+| Literal Number +
+_mapping_type_
+| *ExplicitSubgroupLaneMappingINTEL*
+
+|====
+--
+
+=== Capability
+
+Modify Section 3.31, Capability, adding the following row to the Capability table:
+[cols="1,10,4,4",options="header"]
+|====
+2+^| Capability ^| Implicitly Declares ^| Enabled by Extension
+
+| ????
+| *ExplicitSubgroupLaneMappingINTEL*
+|
+| *SPV_INTEL_subgroup_lane_mapping*
+
+|====
+
+== Validation Rules
+
+None.
+
+== Issues
+
+None.
+
+//. Issue.
+//+
+//--
+//*RESOLVED*: Resolution.
+//--
+
+== Revision History
+
+[cols="5,15,15,70"]
+[grid="rows"]
+[options="header"]
+|========================================
+|Rev|Date|Author|Changes
+|3|2022-10-19
+d|John Pennycook, +
+Ben Ashbaugh, +
+Pekka Jääskeläinen +
+d|Removed SPV_INTEL_subgroups dependency.
+Clarified get_local_size() values.
+Renamed to SPV_INTEL_subgroup_lane_mapping.
+Changed to an extention mode instead of builtin.
+
+|2|2022-10-18
+d|Pekka Jääskeläinen, +
+Henry Linjamäki
+d|Referred to the OpenCL C 2.0 get_local_linear_id() and defined subgroup_id ordering when there are multiple subgroups in flight.
+
+|1|2022-10-18|Pekka Jääskeläinen|Initial revision
+|========================================
